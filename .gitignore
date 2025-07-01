@@ -1,0 +1,17 @@
+# 忽略虚拟环境
+venv/
+.env
+
+# Python 缓存文件
+__pycache__/
+*.pyc
+
+# 音频测试文件
+*.mp3
+*.wav
+
+# 临时压缩包
+*.zip
+
+# VSCode / Cursor 配置
+.vscode/

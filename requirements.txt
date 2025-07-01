@@ -1,0 +1,16 @@
+livekit-agents
+python-dotenv
+requests
+openai-whisper
+torch
+flask
+flask-cors
+websockets
+numpy
+scipy
+soundfile
+librosa
+dashscope
+pydub
+flask-socketio
+eventlet

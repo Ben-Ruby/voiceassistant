@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小鹅语音助手</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .robot-avatar {
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .robot-avatar.awake {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .mic-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+        }
+
+        .mic-button.recording {
+            background: #ff4757;
+            animation: recording-pulse 1s infinite;
+        }
+
+        @keyframes recording-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+
+        .status-text {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .voice-controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .voice-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .voice-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .clear-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            background: #dc3545;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .message.user .message-avatar {
+            background: #007bff;
+            color: #fff;
+        }
+
+        .message.assistant .message-avatar {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #007bff;
+            color: #fff;
+        }
+
+        .message.assistant .message-content {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .system-message {
+            text-align: center;
+            padding: 10px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            color: #856404;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="robot-avatar" id="robotAvatar">🤖</div>
+            <button class="mic-button" id="micButton">🎤</button>
+            <div class="status-text" id="statusText">点击话筒或说"小鹅"唤醒我</div>
+            
+            <div class="voice-controls">
+                <button class="voice-btn active" data-voice="female">女声</button>
+                <button class="voice-btn" data-voice="male">男声</button>
+                <button class="voice-btn" data-voice="child">童声</button>
+                <button class="voice-btn" data-voice="elder">老年声</button>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="chat-header">
+                <div class="chat-title">对话记录</div>
+                <button class="clear-btn" id="clearBtn">清空记录</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="system-message">
+                    欢迎使用小鹅语音助手！点击左侧话筒或说"小鹅"开始对话。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/main.js"></script>
+</body>
+</html> 
